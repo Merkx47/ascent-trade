@@ -25,7 +25,7 @@ import {
 import { navigationGroups } from "@/lib/constants";
 import { useAuth } from "@/hooks/use-auth";
 import { getInitials } from "@/lib/utils";
-import unionBankLogo from "@assets/image_1768418399016.png";
+import unionBankLogo from "@assets/6c06f222-ab7c-4c60-b709-0e952c2dd6ec_removalai_preview_1768419201511.png";
 
 export function AppSidebar() {
   const [location] = useLocation();
