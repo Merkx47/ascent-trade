@@ -37,7 +37,7 @@ export function StatsCard({
   const TrendIcon = calculatedTrend === "up" ? TrendingUp : calculatedTrend === "down" ? TrendingDown : Minus;
 
   return (
-    <Card className="border border-card-border">
+    <Card className="border border-border">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">

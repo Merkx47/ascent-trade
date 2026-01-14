@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { StatsCard } from "@/components/StatsCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { QuickActions } from "@/components/QuickActions";
@@ -8,184 +8,50 @@ import {
   StatusDistributionChart,
 } from "@/components/DashboardCharts";
 import { TransactionTable } from "@/components/TransactionTable";
+import { TransactionModal } from "@/components/TransactionModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyIcon } from "@/components/CurrencyIcon";
 import {
   FileText,
   Clock,
   AlertTriangle,
   CheckCircle,
   TrendingUp,
-  DollarSign,
+  Landmark,
 } from "lucide-react";
+import {
+  mockTransactions,
+  mockActivities,
+  dashboardStats,
+  fxRates,
+} from "@/lib/mockData";
 import type { Transaction } from "@shared/schema";
 
-const mockActivities = [
-  {
-    id: "1",
-    type: "approved" as const,
-    title: "Form M Approved",
-    description: "Import documentation for Dangote Industries approved by compliance",
-    user: "Adebayo Ogunlesi",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    reference: "FM-2024-0847",
-  },
-  {
-    id: "2",
-    type: "created" as const,
-    title: "New Import LC Created",
-    description: "Letter of credit for machinery import from China",
-    user: "Ngozi Okonkwo",
-    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    reference: "LC-2024-0156",
-  },
-  {
-    id: "3",
-    type: "submitted" as const,
-    title: "FX Trade Executed",
-    description: "USD 500,000 spot trade at NGN 1,580.50",
-    user: "Chukwuemeka Eze",
-    timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    reference: "FX-2024-0923",
-  },
-  {
-    id: "4",
-    type: "rejected" as const,
-    title: "Form A Rejected",
-    description: "Documentation incomplete - missing BVN verification",
-    user: "Fatima Mohammed",
-    timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    reference: "FA-2024-0412",
-  },
-  {
-    id: "5",
-    type: "transferred" as const,
-    title: "PAAR Transferred",
-    description: "Transferred to liaison officer for CBN processing",
-    user: "Ibrahim Yusuf",
-    timestamp: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    reference: "PR-2024-0089",
-  },
-  {
-    id: "6",
-    type: "updated" as const,
-    title: "Trade Loan Updated",
-    description: "Collateral documentation updated for facility review",
-    user: "Oluwaseun Adeyemi",
-    timestamp: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
-    reference: "TL-2024-0034",
-  },
-];
-
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    referenceNumber: "FM-2024-0847",
-    productType: "FORMM",
-    customerId: "cust-001",
-    status: "approved",
-    amount: "15750000.00",
-    currency: "USD",
-    description: "Import of industrial machinery",
-    metadata: null,
-    assignedTo: "user-001",
-    priority: "high",
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
-    completedAt: null,
-    createdBy: "user-002",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 30),
-  },
-  {
-    id: "2",
-    referenceNumber: "LC-2024-0156",
-    productType: "IMPORTLC",
-    customerId: "cust-002",
-    status: "under_review",
-    amount: "2850000.00",
-    currency: "USD",
-    description: "Letter of credit for electronics import",
-    metadata: null,
-    assignedTo: "user-003",
-    priority: "normal",
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    completedAt: null,
-    createdBy: "user-001",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-  },
-  {
-    id: "3",
-    referenceNumber: "FX-2024-0923",
-    productType: "FXSALES",
-    customerId: "cust-003",
-    status: "completed",
-    amount: "500000.00",
-    currency: "USD",
-    description: "Spot FX trade USD/NGN",
-    metadata: null,
-    assignedTo: "user-004",
-    priority: "high",
-    dueDate: new Date(),
-    completedAt: new Date(Date.now() - 1000 * 60 * 60),
-    createdBy: "user-004",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60),
-  },
-  {
-    id: "4",
-    referenceNumber: "FA-2024-0412",
-    productType: "FORMA",
-    customerId: "cust-004",
-    status: "pending",
-    amount: "125000.00",
-    currency: "USD",
-    description: "Form A for consultancy services payment",
-    metadata: null,
-    assignedTo: "user-002",
-    priority: "normal",
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-    completedAt: null,
-    createdBy: "user-005",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
-  },
-  {
-    id: "5",
-    referenceNumber: "BFC-2024-0078",
-    productType: "BFC",
-    customerId: "cust-005",
-    status: "pending",
-    amount: "890000.00",
-    currency: "EUR",
-    description: "Documentary collection from German supplier",
-    metadata: null,
-    assignedTo: "user-001",
-    priority: "normal",
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    completedAt: null,
-    createdBy: "user-003",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-  },
-];
-
 export default function Dashboard() {
-  const statsData = {
-    totalTransactions: 1815,
-    previousTransactions: 1654,
-    pendingApprovals: 47,
-    previousPending: 52,
-    exceptions: 12,
-    previousExceptions: 8,
-    completedToday: 23,
-    previousCompleted: 18,
-    fxVolume: 45200000,
-    previousFxVolume: 38500000,
-    revenue: 125000000,
-    previousRevenue: 112000000,
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [modalMode, setModalMode] = useState<"view" | "edit" | "create">("view");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleView = (tx: Transaction) => {
+    setSelectedTx(tx);
+    setModalMode("view");
+    setIsModalOpen(true);
   };
+
+  const handleEdit = (tx: Transaction) => {
+    setSelectedTx(tx);
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
+
+  const recentTransactions = mockTransactions.slice(0, 20);
+  const pendingTransactions = mockTransactions.filter(
+    (t) => t.status === "pending" || t.status === "under_review"
+  );
+  const exceptionTransactions = mockTransactions.filter(
+    (t) => t.status === "exception"
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -201,35 +67,35 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatsCard
           title="Total Transactions"
-          value={statsData.totalTransactions}
-          previousValue={statsData.previousTransactions}
-          currentValue={statsData.totalTransactions}
+          value={dashboardStats.totalTransactions}
+          previousValue={dashboardStats.previousTransactions}
+          currentValue={dashboardStats.totalTransactions}
           icon={FileText}
           description="vs last month"
         />
         <StatsCard
           title="Pending Approvals"
-          value={statsData.pendingApprovals}
-          previousValue={statsData.previousPending}
-          currentValue={statsData.pendingApprovals}
+          value={dashboardStats.pendingApprovals}
+          previousValue={dashboardStats.previousPending}
+          currentValue={dashboardStats.pendingApprovals}
           icon={Clock}
           iconColor="text-yellow-600"
           description="vs last month"
         />
         <StatsCard
           title="Exceptions"
-          value={statsData.exceptions}
-          previousValue={statsData.previousExceptions}
-          currentValue={statsData.exceptions}
+          value={dashboardStats.exceptions}
+          previousValue={dashboardStats.previousExceptions}
+          currentValue={dashboardStats.exceptions}
           icon={AlertTriangle}
           iconColor="text-red-600"
           description="vs last month"
         />
         <StatsCard
           title="Completed Today"
-          value={statsData.completedToday}
-          previousValue={statsData.previousCompleted}
-          currentValue={statsData.completedToday}
+          value={dashboardStats.completedToday}
+          previousValue={dashboardStats.previousCompleted}
+          currentValue={dashboardStats.completedToday}
           icon={CheckCircle}
           iconColor="text-green-600"
           description="vs yesterday"
@@ -237,30 +103,68 @@ export default function Dashboard() {
         <StatsCard
           title="FX Volume (USD)"
           value="$45.2M"
-          previousValue={statsData.previousFxVolume}
-          currentValue={statsData.fxVolume}
+          previousValue={dashboardStats.previousFxVolume}
+          currentValue={dashboardStats.fxVolume}
           icon={TrendingUp}
           iconColor="text-cyan-600"
           description="vs last month"
         />
         <StatsCard
           title="Fee Revenue"
-          value="NGN 125M"
-          previousValue={statsData.previousRevenue}
-          currentValue={statsData.revenue}
-          icon={DollarSign}
+          value="₦125M"
+          previousValue={dashboardStats.previousRevenue}
+          currentValue={dashboardStats.revenue}
+          icon={Landmark}
           iconColor="text-emerald-600"
           description="vs last month"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <Card className="border border-border">
+          <CardHeader className="pb-3 border-b border-border">
+            <CardTitle className="text-sm font-medium">Live FX Rates</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
+              {fxRates.slice(0, 4).map((rate) => (
+                <div
+                  key={rate.pair}
+                  className="flex items-center justify-between px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <CurrencyIcon
+                      currency={rate.pair.split("/")[0]}
+                      className="w-5 h-5"
+                    />
+                    <span className="font-mono text-sm font-medium">
+                      {rate.pair}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-sm font-semibold">
+                      {rate.bid.toLocaleString()}
+                    </p>
+                    <p
+                      className={`text-xs ${
+                        rate.change >= 0 ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
+                      {rate.change >= 0 ? "+" : ""}
+                      {rate.change}%
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="lg:col-span-2">
           <TransactionVolumeChart />
         </div>
-        <div>
-          <QuickActions />
-        </div>
+
+        <QuickActions />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -269,39 +173,19 @@ export default function Dashboard() {
         <ActivityFeed activities={mockActivities} />
       </div>
 
-      <Card className="border border-card-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all" data-testid="tab-all-transactions">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="pending" data-testid="tab-pending-transactions">
-                Pending
-              </TabsTrigger>
-              <TabsTrigger value="exceptions" data-testid="tab-exception-transactions">
-                Exceptions
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="all">
-              <TransactionTable transactions={mockTransactions} />
-            </TabsContent>
-            <TabsContent value="pending">
-              <TransactionTable
-                transactions={mockTransactions.filter((t) => t.status === "pending")}
-              />
-            </TabsContent>
-            <TabsContent value="exceptions">
-              <TransactionTable
-                transactions={mockTransactions.filter((t) => t.status === "exception")}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <TransactionTable
+        transactions={recentTransactions}
+        title="Recent Transactions"
+        onView={handleView}
+        onEdit={handleEdit}
+      />
+
+      <TransactionModal
+        transaction={selectedTx}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode={modalMode}
+      />
     </div>
   );
 }

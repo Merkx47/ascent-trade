@@ -10,6 +10,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
 import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import FormM from "@/pages/FormM";
 import FxTrading from "@/pages/FxTrading";
@@ -48,11 +49,7 @@ function Router() {
   const [location] = useLocation();
 
   if (!isAuthenticated) {
-    if (location === "/") {
-      return <Landing />;
-    }
-    login();
-    return <Landing />;
+    return <Login />;
   }
 
   return (

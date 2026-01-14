@@ -52,12 +52,12 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
   const displayedActivities = activities.slice(0, maxItems);
 
   return (
-    <Card className="border border-card-border h-full">
-      <CardHeader className="pb-3">
+    <Card className="border border-border h-full">
+      <CardHeader className="pb-3 border-b border-border">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           <Link href="/notifications">
-            <Badge variant="secondary" className="cursor-pointer">
+            <Badge variant="secondary" className="cursor-pointer border border-border">
               View All
             </Badge>
           </Link>
@@ -65,7 +65,7 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[400px]">
-          <div className="divide-y">
+          <div className="divide-y divide-border">
             {displayedActivities.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 No recent activity

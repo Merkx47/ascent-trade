@@ -48,8 +48,8 @@ const statusDistributionData = [
 
 export function TransactionVolumeChart() {
   return (
-    <Card className="border border-card-border">
-      <CardHeader className="pb-2">
+    <Card className="border border-border">
+      <CardHeader className="pb-2 border-b border-border">
         <CardTitle className="text-lg font-semibold">Transaction Volume</CardTitle>
       </CardHeader>
       <CardContent>
@@ -106,8 +106,8 @@ export function TransactionVolumeChart() {
 
 export function ProductMixChart() {
   return (
-    <Card className="border border-card-border">
-      <CardHeader className="pb-2">
+    <Card className="border border-border">
+      <CardHeader className="pb-2 border-b border-border">
         <CardTitle className="text-lg font-semibold">Product Mix</CardTitle>
       </CardHeader>
       <CardContent>
@@ -157,8 +157,8 @@ export function ProductMixChart() {
 
 export function StatusDistributionChart() {
   return (
-    <Card className="border border-card-border">
-      <CardHeader className="pb-2">
+    <Card className="border border-border">
+      <CardHeader className="pb-2 border-b border-border">
         <CardTitle className="text-lg font-semibold">Status Distribution</CardTitle>
       </CardHeader>
       <CardContent>

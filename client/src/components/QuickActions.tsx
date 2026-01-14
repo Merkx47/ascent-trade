@@ -66,8 +66,8 @@ const quickActions: QuickAction[] = [
 
 export function QuickActions() {
   return (
-    <Card className="border border-card-border h-full">
-      <CardHeader className="pb-3">
+    <Card className="border border-border h-full">
+      <CardHeader className="pb-3 border-b border-border">
         <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
       </CardHeader>
       <CardContent>
