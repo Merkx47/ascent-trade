@@ -36,7 +36,7 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r-2 border-sidebar-border">
       <SidebarHeader className="p-4 border-b-2 border-sidebar-border">
-        <Link href="/" className="flex items-center justify-center">
+        <Link href="/" className="flex items-center justify-start">
           <img 
             src={unionBankLogo} 
             alt="Union Bank" 

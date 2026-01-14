@@ -96,13 +96,15 @@ export function TransactionTrendChart() {
               />
               <ReferenceLine
                 x={todayLabel}
-                stroke="hsl(var(--muted-foreground))"
-                strokeDasharray="3 3"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
                 label={{
-                  value: "Today",
-                  position: "top",
-                  fill: "hsl(var(--muted-foreground))",
-                  fontSize: 11,
+                  value: "TODAY",
+                  position: "insideTopRight",
+                  fill: "hsl(var(--primary))",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  dy: -8,
                 }}
               />
               <Area
