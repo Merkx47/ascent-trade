@@ -110,7 +110,7 @@ export function TransactionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl border border-border">
+      <DialogContent className="max-w-4xl border-2 border-border">
         <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -222,7 +222,7 @@ export function TransactionModal({
                       setFormData({ ...formData, customerId: value })
                     }
                   >
-                    <SelectTrigger className="border-border" data-testid="select-customer">
+                    <SelectTrigger className="border-2 border-border" data-testid="select-customer">
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -242,7 +242,7 @@ export function TransactionModal({
                       setFormData({ ...formData, priority: value })
                     }
                   >
-                    <SelectTrigger className="border-border" data-testid="select-priority">
+                    <SelectTrigger className="border-2 border-border" data-testid="select-priority">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
                     <SelectContent>
@@ -266,7 +266,7 @@ export function TransactionModal({
                       setFormData({ ...formData, amount: e.target.value })
                     }
                     placeholder="Enter amount"
-                    className="border-border"
+                    className="border-2 border-border"
                     data-testid="input-amount"
                   />
                 </div>
@@ -278,7 +278,7 @@ export function TransactionModal({
                       setFormData({ ...formData, currency: value })
                     }
                   >
-                    <SelectTrigger className="border-border" data-testid="select-currency">
+                    <SelectTrigger className="border-2 border-border" data-testid="select-currency">
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
@@ -301,7 +301,7 @@ export function TransactionModal({
                       setFormData({ ...formData, status: value })
                     }
                   >
-                    <SelectTrigger className="border-border" data-testid="select-status">
+                    <SelectTrigger className="border-2 border-border" data-testid="select-status">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -325,7 +325,7 @@ export function TransactionModal({
                     setFormData({ ...formData, description: e.target.value })
                   }
                   placeholder="Enter description of goods or services"
-                  className="min-h-[100px] border-border"
+                  className="min-h-[100px] border-2 border-border"
                   data-testid="input-description"
                 />
               </div>

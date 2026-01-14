@@ -25,7 +25,7 @@ import {
 import { navigationGroups } from "@/lib/constants";
 import { useAuth } from "@/hooks/use-auth";
 import { getInitials } from "@/lib/utils";
-import unionBankLogo from "@assets/6c06f222-ab7c-4c60-b709-0e952c2dd6ec_removalai_preview_1768419201511.png";
+import unionBankLogo from "@assets/image_1768419831653.png";
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -35,12 +35,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r-2 border-sidebar-border">
-      <SidebarHeader className="p-4 border-b-2 border-sidebar-border bg-primary">
+      <SidebarHeader className="p-4 border-b-2 border-sidebar-border">
         <Link href="/" className="flex items-center justify-center">
           <img 
             src={unionBankLogo} 
             alt="Union Bank" 
-            className="h-10 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         </Link>
       </SidebarHeader>

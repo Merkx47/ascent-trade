@@ -22,6 +22,8 @@ import ProductPage from "@/pages/ProductPage";
 import Notifications from "@/pages/Notifications";
 import Customers from "@/pages/Customers";
 import Reports from "@/pages/Reports";
+import Compliance from "@/pages/Compliance";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -109,18 +111,8 @@ function Router() {
         </Route>
         <Route path="/customers" component={Customers} />
         <Route path="/reports" component={Reports} />
-        <Route path="/compliance">
-          <div className="p-6">
-            <h1 className="text-2xl font-semibold">Compliance</h1>
-            <p className="text-muted-foreground mt-2">Compliance module coming soon</p>
-          </div>
-        </Route>
-        <Route path="/settings">
-          <div className="p-6">
-            <h1 className="text-2xl font-semibold">Settings</h1>
-            <p className="text-muted-foreground mt-2">Settings module coming soon</p>
-          </div>
-        </Route>
+        <Route path="/compliance" component={Compliance} />
+        <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

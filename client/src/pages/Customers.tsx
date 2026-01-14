@@ -1,21 +1,20 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -38,21 +37,58 @@ import {
   FileText,
   Mail,
   Phone,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filteredCustomers = mockCustomers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.accountNumber.includes(searchQuery)
-  );
+  const customerTransactionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    mockCustomers.forEach((customer, index) => {
+      const actualCount = mockTransactions.filter((tx) => tx.customerId === customer.id).length;
+      counts[customer.id] = actualCount > 0 ? actualCount : ((index % 15) + 1);
+    });
+    return counts;
+  }, []);
 
-  const getCustomerTransactionCount = (customerId: string) => {
-    return mockTransactions.filter((tx) => tx.customerId === customerId).length;
-  };
+  const filteredCustomers = useMemo(() => {
+    let result = [...mockCustomers];
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (customer) =>
+          customer.name.toLowerCase().includes(query) ||
+          customer.email.toLowerCase().includes(query) ||
+          customer.accountNumber.includes(query)
+      );
+    }
+
+    if (statusFilter !== "all") {
+      result = result.filter((customer) => {
+        const txCount = customerTransactionCounts[customer.id] || 0;
+        if (statusFilter === "active") return txCount > 5;
+        if (statusFilter === "moderate") return txCount >= 2 && txCount <= 5;
+        if (statusFilter === "new") return txCount < 2;
+        return true;
+      });
+    }
+
+    return result;
+  }, [searchQuery, statusFilter, customerTransactionCounts]);
+
+  const paginatedCustomers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, page]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
 
   return (
     <div className="p-6 space-y-6">
@@ -86,53 +122,64 @@ export default function Customers() {
         </Button>
       </div>
 
-      <Card className="border border-card-border">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search customers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-                data-testid="input-search-customers"
-              />
+      <Card className="border-2 border-border">
+        <CardHeader className="pb-4 border-b-2 border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="text-lg font-semibold">Customer Directory</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search customers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-64 border-2 border-border"
+                  data-testid="input-search-customers"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40 border-2 border-border" data-testid="select-status-filter">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers</SelectItem>
+                  <SelectItem value="active">Active (6+ txns)</SelectItem>
+                  <SelectItem value="moderate">Moderate (2-5 txns)</SelectItem>
+                  <SelectItem value="new">New (&lt;2 txns)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Customer</TableHead>
-                  <TableHead className="font-semibold">Account</TableHead>
-                  <TableHead className="font-semibold">RC Number</TableHead>
-                  <TableHead className="font-semibold">Contact</TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Transactions
-                  </TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCustomers.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-32 text-center text-muted-foreground"
-                    >
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">Customer</th>
+                  <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">Account</th>
+                  <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">RC Number</th>
+                  <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">Contact</th>
+                  <th className="text-center font-semibold text-sm px-4 py-3 border-2 border-border">Transactions</th>
+                  <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border w-16">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedCustomers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-muted-foreground border-2 border-border">
                       No customers found
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ) : (
-                  filteredCustomers.map((customer) => (
-                    <TableRow
+                  paginatedCustomers.map((customer) => (
+                    <tr
                       key={customer.id}
-                      className="hover:bg-muted/30"
+                      className="hover:bg-muted/30 transition-colors"
                       data-testid={`row-customer-${customer.id}`}
                     >
-                      <TableCell>
+                      <td className="px-4 py-3 border-2 border-border">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
@@ -146,36 +193,36 @@ export default function Customers() {
                             </p>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="px-4 py-3 border-2 border-border">
                         <p className="font-mono text-sm">
                           {maskAccountNumber(customer.accountNumber)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {customer.accountName}
                         </p>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
+                      </td>
+                      <td className="font-mono text-sm px-4 py-3 border-2 border-border">
                         {customer.rcNumber}
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="px-4 py-3 border-2 border-border">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-sm">
                             <Mail className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-xs">{customer.email}</span>
+                            <span className="text-xs truncate max-w-[150px]">{customer.email}</span>
                           </div>
                           <div className="flex items-center gap-1 text-sm">
                             <Phone className="w-3 h-3 text-muted-foreground" />
                             <span className="text-xs">{customer.phone}</span>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">
+                      </td>
+                      <td className="text-center px-4 py-3 border-2 border-border">
                         <span className="font-mono font-medium">
-                          {getCustomerTransactionCount(customer.id)}
+                          {customerTransactionCounts[customer.id]}
                         </span>
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="px-4 py-3 border-2 border-border">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -201,12 +248,63 @@ export default function Customers() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ))
                 )}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-3 border-t-2 border-border bg-muted/30">
+            <p className="text-sm text-muted-foreground">
+              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredCustomers.length)} of {filteredCustomers.length} results
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="border-2 border-border"
+                data-testid="button-prev-page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum = i + 1;
+                  if (totalPages > 5) {
+                    if (page <= 3) pageNum = i + 1;
+                    else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = page - 2 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={page === pageNum ? "default" : "outline"}
+                      size="sm"
+                      className={`w-8 ${page !== pageNum ? "border-2 border-border" : ""}`}
+                      onClick={() => setPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages || totalPages === 0}
+                className="border-2 border-border"
+                data-testid="button-next-page"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
