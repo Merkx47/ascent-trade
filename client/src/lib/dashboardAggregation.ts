@@ -4,6 +4,7 @@ function aggregateTransactionsByDate() {
   const txByDate: Record<string, { count: number; value: number }> = {};
   
   mockTransactions.forEach((tx) => {
+    if (!tx.createdAt) return;
     const createdAt = tx.createdAt instanceof Date ? tx.createdAt : new Date(tx.createdAt);
     const dateKey = createdAt.toISOString().split("T")[0];
     if (!txByDate[dateKey]) {
