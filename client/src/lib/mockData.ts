@@ -465,3 +465,147 @@ export const statusDistributionData = [
   { status: "Under Review", count: mockTransactions.filter(t => t.status === "under_review").length, color: "#3b82f6" },
   { status: "Exception", count: mockTransactions.filter(t => t.status === "exception").length, color: "#ef4444" },
 ];
+
+// Mock Users for User Management
+export interface MockUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  employeeId: string;
+  department: string;
+  branch: string;
+  role: string;
+  status: string;
+  permissions: string[];
+  dailyLimit: number;
+  approvalLimit: number;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+}
+
+const departments = [
+  "Trade Finance", "Treasury Operations", "Foreign Exchange", "Compliance",
+  "Risk Management", "Corporate Banking", "Operations", "Internal Audit"
+];
+
+const branches = [
+  "Head Office - Stallion Plaza", "Marina Branch", "Victoria Island Branch",
+  "Ikeja Branch", "Apapa Branch", "Port Harcourt Branch", "Abuja Branch", "Kano Branch"
+];
+
+const roles = [
+  "Maker", "Checker", "Supervisor", "Branch Manager", "Compliance Officer",
+  "Trade Officer", "Relationship Manager", "Administrator"
+];
+
+const userStatuses = ["Active", "Inactive", "Suspended", "Pending Activation"];
+
+export const mockUsers: MockUser[] = Array.from({ length: 25 }, (_, i) => {
+  const name = generateNigerianName();
+  const role = roles[i % roles.length];
+  const department = departments[i % departments.length];
+  const branch = branches[i % branches.length];
+  const status = i < 20 ? "Active" : userStatuses[i % userStatuses.length];
+
+  return {
+    id: `user-${String(i + 1).padStart(3, "0")}`,
+    firstName: name.firstName,
+    lastName: name.lastName,
+    email: `${name.firstName.toLowerCase()}.${name.lastName.toLowerCase()}@unionbank.com`,
+    phone: `+234 ${Math.floor(Math.random() * 9) + 1}${String(Math.floor(Math.random() * 100000000)).padStart(8, "0")}`,
+    employeeId: `UBN-${department.substring(0, 2).toUpperCase()}-${String(i + 1).padStart(3, "0")}`,
+    department,
+    branch,
+    role,
+    status,
+    permissions: [],
+    dailyLimit: (i + 1) * 10000000,
+    approvalLimit: (i + 1) * 5000000,
+    lastLoginAt: status === "Active" ? generateDate(7, 0) : null,
+    createdAt: generateDate(365, 0),
+  };
+});
+
+// Mock Checker Queue
+export interface MockCheckerQueueItem {
+  id: string;
+  entityType: string;
+  entityId: string;
+  referenceNumber: string;
+  action: "create" | "update" | "delete";
+  status: "pending" | "approved" | "rejected" | "sent_back";
+  priority: "normal" | "high" | "urgent";
+  makerId: string;
+  makerName: string;
+  makerDepartment: string;
+  makerComments: string;
+  submittedAt: Date;
+  checkerId: string | null;
+  checkerName: string | null;
+  checkerComments: string | null;
+  checkedAt: Date | null;
+  customerName: string;
+  amount: string;
+  currency: string;
+  description: string;
+}
+
+const queueStatuses = ["pending", "pending", "pending", "approved", "rejected", "sent_back"] as const;
+const queuePriorities = ["normal", "normal", "high", "urgent"] as const;
+const queueActions = ["create", "update"] as const;
+
+export const mockCheckerQueue: MockCheckerQueueItem[] = Array.from({ length: 45 }, (_, i) => {
+  const productType = productTypes[i % productTypes.length];
+  const maker = mockUsers[i % mockUsers.length];
+  const checker = Math.random() > 0.5 ? mockUsers[(i + 5) % mockUsers.length] : null;
+  const customer = mockCustomers[i % mockCustomers.length];
+  const status = queueStatuses[i % queueStatuses.length];
+  const tx = mockTransactions[i % mockTransactions.length];
+
+  const prefixMap: Record<string, string> = {
+    FORMM: "FM", FORMA: "FA", FORMNXP: "NXP", PAAR: "PR", IMPORTLC: "LC",
+    BFC: "BFC", SHIPPINGDOC: "SD", FXSALES: "FX", LOAN: "TL", INWCP: "IWP", DOMOUTAC: "OUT"
+  };
+
+  return {
+    id: `queue-${String(i + 1).padStart(3, "0")}`,
+    entityType: productType,
+    entityId: tx.id,
+    referenceNumber: generateRef(prefixMap[productType], i + 1000),
+    action: queueActions[i % queueActions.length],
+    status,
+    priority: queuePriorities[i % queuePriorities.length],
+    makerId: maker.id,
+    makerName: `${maker.firstName} ${maker.lastName}`,
+    makerDepartment: maker.department,
+    makerComments: i % 3 === 0 ? "Urgent processing required for customer deadline" : "",
+    submittedAt: generateDate(5, 0),
+    checkerId: status !== "pending" && checker ? checker.id : null,
+    checkerName: status !== "pending" && checker ? `${checker.firstName} ${checker.lastName}` : null,
+    checkerComments: status === "rejected" ? "Missing supporting documents" : status === "sent_back" ? "Please verify customer details" : null,
+    checkedAt: status !== "pending" ? generateDate(2, 0) : null,
+    customerName: customer.name,
+    amount: tx.amount || "0",
+    currency: tx.currency || "USD",
+    description: tx.description || "Transaction",
+  };
+});
+
+// Helper functions for checker queue
+export function getQueueItemsByStatus(status: string): MockCheckerQueueItem[] {
+  return mockCheckerQueue.filter((item) => item.status === status);
+}
+
+export function getQueueItemsByEntityType(entityType: string): MockCheckerQueueItem[] {
+  return mockCheckerQueue.filter((item) => item.entityType === entityType);
+}
+
+export function getPendingQueueCount(): number {
+  return mockCheckerQueue.filter((item) => item.status === "pending").length;
+}
+
+export function getUserById(id: string): MockUser | undefined {
+  return mockUsers.find((u) => u.id === id);
+}

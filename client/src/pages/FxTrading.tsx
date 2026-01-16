@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { formatCurrency, formatNumber } from "@/lib/utils";
-import { mockFxTrades } from "@/lib/mockData";
+import { mockFxTrades, type MockFxTrade } from "@/lib/mockData";
+import { useToast } from "@/hooks/use-toast";
+import { useCheckerQueue } from "@/contexts/CheckerQueueContext";
+import { useAuth } from "@/hooks/use-auth";
+import { DateRangePicker } from "@/components/DateRangePicker";
+import { subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import type { DateRange } from "react-day-picker";
 import {
   Repeat,
   TrendingUp,
@@ -42,18 +48,40 @@ const fxRates = [
   { pair: "CNY/NGN", bid: 218.50, ask: 220.25, change: -0.12 },
 ];
 
+// Generate unique trade reference
+const generateTradeReference = (): string => {
+  const timestamp = Date.now().toString().slice(-8);
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `FX-${timestamp}-${random}`;
+};
+
 export default function FxTrading() {
+  const { toast } = useToast();
+  const { addToQueue } = useCheckerQueue();
+  const { user } = useAuth();
   const [selectedPair, setSelectedPair] = useState("USD/NGN");
   const [tradeType, setTradeType] = useState("spot");
   const [buySell, setBuySell] = useState("buy");
   const [amount, setAmount] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 29),
+    to: new Date(),
+  });
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  // Mutable trades state
+  const [trades, setTrades] = useState<MockFxTrade[]>([]);
+
+  // Initialize trades from mock data
+  useEffect(() => {
+    setTrades([...mockFxTrades]);
+  }, []);
+
   const filteredTrades = useMemo(() => {
-    let result = [...mockFxTrades];
+    let result = [...trades];
     if (search) {
       const searchLower = search.toLowerCase();
       result = result.filter(
@@ -66,8 +94,19 @@ export default function FxTrading() {
     if (statusFilter !== "all") {
       result = result.filter((trade) => trade.settlementStatus === statusFilter);
     }
+    // Apply date range filter
+    if (dateRange?.from && dateRange?.to) {
+      result = result.filter((trade) => {
+        if (!trade.valueDate) return false;
+        const tradeDate = new Date(trade.valueDate);
+        return isWithinInterval(tradeDate, {
+          start: startOfDay(dateRange.from!),
+          end: endOfDay(dateRange.to!),
+        });
+      });
+    }
     return result;
-  }, [search, statusFilter]);
+  }, [trades, search, statusFilter, dateRange]);
 
   const paginatedTrades = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -75,6 +114,59 @@ export default function FxTrading() {
   }, [filteredTrades, page]);
 
   const totalPages = Math.ceil(filteredTrades.length / pageSize);
+
+  const handleExecuteTrade = () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid trade amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const rate = fxRates.find((r) => r.pair === selectedPair)?.[buySell === "buy" ? "ask" : "bid"] || 0;
+    const [sellCurrency, buyCurrency] = selectedPair.split("/");
+
+    const newTrade: MockFxTrade = {
+      id: `fx-${Date.now()}`,
+      tradeReference: generateTradeReference(),
+      tradeType: tradeType as "spot" | "forward" | "swap",
+      sellCurrency: buySell === "sell" ? sellCurrency : buyCurrency,
+      buyCurrency: buySell === "sell" ? buyCurrency : sellCurrency,
+      sellAmount: buySell === "sell" ? amount : (parseFloat(amount) * rate).toFixed(2),
+      buyAmount: buySell === "buy" ? amount : (parseFloat(amount) * rate).toFixed(2),
+      spotRate: rate.toString(),
+      forwardPoints: "0",
+      allInRate: rate.toString(),
+      valueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // T+2
+      counterparty: "Direct Client",
+      dealerName: "Current User",
+      settlementStatus: "pending",
+    };
+
+    setTrades((prev) => [newTrade, ...prev]);
+    setAmount("");
+
+    // Add to checker queue
+    addToQueue({
+      referenceNumber: newTrade.tradeReference,
+      entityType: "FXSALES",
+      entityId: newTrade.id,
+      customerName: "Direct Client",
+      amount: buySell === "sell" ? newTrade.sellAmount : newTrade.buyAmount,
+      currency: buySell === "sell" ? newTrade.sellCurrency : newTrade.buyCurrency,
+      priority: "normal",
+      makerName: user ? `${user.firstName} ${user.lastName}` : "Current User",
+      makerDepartment: "Treasury",
+      makerComments: `${buySell.toUpperCase()} ${selectedPair} at ${rate}`,
+    });
+
+    toast({
+      title: "Trade Submitted",
+      description: `${newTrade.tradeReference}: ${buySell.toUpperCase()} ${amount} ${sellCurrency} at ${rate} - Pending checker approval`,
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -164,57 +256,65 @@ export default function FxTrading() {
 
           <Card className="border-2 border-border">
             <CardHeader className="pb-4 border-b-2 border-border">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search trades..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-9 w-56 border-2 border-border"
-                      data-testid="input-search-trades"
-                    />
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search trades..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9 w-56 border-2 border-border"
+                        data-testid="input-search-trades"
+                      />
+                    </div>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-36 border-2 border-border" data-testid="select-status-filter">
+                        <Filter className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="settled">Settled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      className="border-2"
+                      onClick={() => {
+                        const exportData = filteredTrades.map(trade => formatFxTradeForExport({
+                          id: trade.id,
+                          dealNumber: trade.tradeReference,
+                          tradeType: trade.tradeType,
+                          buyCurrency: trade.buyCurrency,
+                          sellCurrency: trade.sellCurrency,
+                          buyAmount: parseFloat(trade.buyAmount),
+                          sellAmount: parseFloat(trade.sellAmount),
+                          rate: parseFloat(trade.allInRate),
+                          customer: trade.counterparty,
+                          status: trade.settlementStatus,
+                          tradeDate: trade.valueDate.toISOString().split("T")[0],
+                          valueDate: trade.valueDate.toISOString().split("T")[0],
+                          trader: trade.dealerName,
+                        }));
+                        exportToExcel(exportData, "FX_Trades_Export");
+                      }}
+                      data-testid="button-download-xlsx"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
                   </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-36 border-2 border-border" data-testid="select-status-filter">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="settled">Settled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    variant="outline" 
-                    className="border-2"
-                    onClick={() => {
-                      const exportData = filteredTrades.map(trade => formatFxTradeForExport({
-                        id: trade.id,
-                        dealNumber: trade.tradeReference,
-                        tradeType: trade.tradeType,
-                        buyCurrency: trade.buyCurrency,
-                        sellCurrency: trade.sellCurrency,
-                        buyAmount: parseFloat(trade.buyAmount),
-                        sellAmount: parseFloat(trade.sellAmount),
-                        rate: parseFloat(trade.allInRate),
-                        customer: trade.counterparty,
-                        status: trade.settlementStatus,
-                        tradeDate: trade.valueDate.toISOString().split("T")[0],
-                        valueDate: trade.valueDate.toISOString().split("T")[0],
-                        trader: trade.dealerName,
-                      }));
-                      exportToExcel(exportData, "FX_Trades_Export");
-                    }}
-                    data-testid="button-download-xlsx"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <DateRangePicker
+                    dateRange={dateRange}
+                    onDateRangeChange={setDateRange}
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -426,7 +526,7 @@ export default function FxTrading() {
                 )}
               </div>
 
-              <Button className="w-full" data-testid="button-execute-trade">
+              <Button className="w-full" onClick={handleExecuteTrade} data-testid="button-execute-trade">
                 <Plus className="w-4 h-4 mr-2" />
                 Execute Trade
               </Button>

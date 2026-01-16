@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { FxRatesProvider } from "@/hooks/use-fx-rates";
 import { LanguageProvider } from "@/components/LanguageSwitcher";
 import { GoogleTranslate } from "@/components/GoogleTranslate";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -13,8 +14,10 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Bell, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CheckerQueueProvider } from "@/contexts/CheckerQueueContext";
 
 import Login from "@/pages/Login";
+import OtpVerification from "@/pages/OtpVerification";
 import Dashboard from "@/pages/Dashboard";
 import FormM from "@/pages/FormM";
 import FxTrading from "@/pages/FxTrading";
@@ -22,8 +25,14 @@ import ProductPage from "@/pages/ProductPage";
 import Notifications from "@/pages/Notifications";
 import Customers from "@/pages/Customers";
 import Reports from "@/pages/Reports";
+import CustomReport from "@/pages/reports/CustomReport";
+import MISReport from "@/pages/reports/MISReport";
+import RegulatoryReport from "@/pages/reports/RegulatoryReport";
+import CBNMonthlyReport from "@/pages/reports/CBNMonthlyReport";
 import Compliance from "@/pages/Compliance";
 import Settings from "@/pages/Settings";
+import UserManagement from "@/pages/UserManagement";
+import CheckerQueue from "@/pages/CheckerQueue";
 import NotFound from "@/pages/not-found";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -37,7 +46,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between h-14 px-4 border-b-2 border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
+          <header className="flex items-center justify-between h-14 px-4 border-b-2 border-border bg-background shrink-0 relative z-50">
             <div className="flex items-center gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <Badge variant="outline" className="border-2 hidden sm:flex">
@@ -69,8 +78,14 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isOtpRequired } = useAuth();
 
+  // Show OTP screen if credentials validated but OTP not yet verified
+  if (isOtpRequired) {
+    return <OtpVerification />;
+  }
+
+  // Show login if not authenticated
   if (!isAuthenticated) {
     return <Login />;
   }
@@ -111,8 +126,14 @@ function Router() {
         </Route>
         <Route path="/customers" component={Customers} />
         <Route path="/reports" component={Reports} />
+        <Route path="/reports/custom" component={CustomReport} />
+        <Route path="/reports/mis" component={MISReport} />
+        <Route path="/reports/regulatory" component={RegulatoryReport} />
+        <Route path="/reports/cbn" component={CBNMonthlyReport} />
         <Route path="/compliance" component={Compliance} />
         <Route path="/settings" component={Settings} />
+        <Route path="/user-management" component={UserManagement} />
+        <Route path="/checker-queue" component={CheckerQueue} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -124,12 +145,16 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="ascent-trade-theme">
         <AuthProvider>
-          <LanguageProvider>
-            <TooltipProvider>
-              <Router />
-              <Toaster />
-            </TooltipProvider>
-          </LanguageProvider>
+          <FxRatesProvider>
+            <CheckerQueueProvider>
+              <LanguageProvider>
+                <TooltipProvider>
+                  <Router />
+                  <Toaster />
+                </TooltipProvider>
+              </LanguageProvider>
+            </CheckerQueueProvider>
+          </FxRatesProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

@@ -7,12 +7,20 @@ interface User {
   email: string;
   profileImageUrl?: string;
   role: string;
+  department?: string;
+  employeeId?: string;
+  branch?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: () => void;
+  isOtpRequired: boolean;
+  pendingEmail: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  verifyOtp: (code: string) => Promise<boolean>;
+  resendOtp: () => Promise<void>;
+  cancelOtp: () => void;
   logout: () => void;
 }
 
@@ -24,7 +32,10 @@ const mockUser: User = {
   lastName: "Ogunlesi",
   email: "adebayo.ogunlesi@unionbank.com",
   profileImageUrl: undefined,
-  role: "Trade Officer",
+  role: "Super Admin",
+  department: "Trade Finance",
+  employeeId: "UBN-TF-001",
+  branch: "Head Office - Stallion Plaza",
 };
 
 interface AuthProviderProps {
@@ -34,17 +45,73 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(() => {
     const savedAuth = localStorage.getItem("ascent-trade-auth");
-    return savedAuth === "true" ? mockUser : null;
+    if (savedAuth) {
+      try {
+        const parsed = JSON.parse(savedAuth);
+        if (parsed.verified) {
+          return mockUser;
+        }
+      } catch {
+        // If old format (just "true"), clear it
+        localStorage.removeItem("ascent-trade-auth");
+      }
+    }
+    return null;
   });
 
-  const login = () => {
-    localStorage.setItem("ascent-trade-auth", "true");
-    setUser(mockUser);
+  const [isOtpRequired, setIsOtpRequired] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+
+  const login = async (email: string, password: string) => {
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // For demo: accept any email/password, proceed to OTP
+    setPendingEmail(email);
+    setIsOtpRequired(true);
+  };
+
+  const verifyOtp = async (code: string): Promise<boolean> => {
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Accept any valid 6-digit code
+    if (code.length === 6 && /^\d{6}$/.test(code)) {
+      // Update mock user with the email they logged in with
+      const authenticatedUser = {
+        ...mockUser,
+        email: pendingEmail || mockUser.email,
+      };
+
+      localStorage.setItem(
+        "ascent-trade-auth",
+        JSON.stringify({ verified: true, email: pendingEmail })
+      );
+      setUser(authenticatedUser);
+      setIsOtpRequired(false);
+      setPendingEmail(null);
+      return true;
+    }
+
+    return false;
+  };
+
+  const resendOtp = async () => {
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    // In production, this would trigger a new OTP to be sent
+  };
+
+  const cancelOtp = () => {
+    setIsOtpRequired(false);
+    setPendingEmail(null);
   };
 
   const logout = () => {
     localStorage.removeItem("ascent-trade-auth");
     setUser(null);
+    setIsOtpRequired(false);
+    setPendingEmail(null);
   };
 
   return (
@@ -52,7 +119,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       value={{
         user,
         isAuthenticated: !!user,
+        isOtpRequired,
+        pendingEmail,
         login,
+        verifyOtp,
+        resendOtp,
+        cancelOtp,
         logout,
       }}
     >

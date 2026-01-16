@@ -15,6 +15,8 @@ import {
   BarChart3,
   Shield,
   Bell,
+  ClipboardCheck,
+  UserCog,
   type LucideIcon,
 } from "lucide-react";
 
@@ -66,10 +68,27 @@ export const navigationGroups: NavGroup[] = [
     ],
   },
   {
+    title: "Workflow",
+    items: [
+      { title: "Checker Queue", href: "/checker-queue", icon: ClipboardCheck },
+    ],
+  },
+  {
     title: "Administration",
     items: [
+      { title: "User Management", href: "/user-management", icon: UserCog },
       { title: "Customers", href: "/customers", icon: Users },
-      { title: "Reports", href: "/reports", icon: BarChart3 },
+      {
+        title: "Report Engine",
+        href: "/reports",
+        icon: BarChart3,
+        children: [
+          { title: "Custom Report", href: "/reports/custom", icon: FileText },
+          { title: "MIS Report", href: "/reports/mis", icon: BarChart3 },
+          { title: "Regulatory Report", href: "/reports/regulatory", icon: Shield },
+          { title: "CBN Monthly Report", href: "/reports/cbn", icon: Landmark },
+        ],
+      },
       { title: "Compliance", href: "/compliance", icon: Shield },
       { title: "Settings", href: "/settings", icon: Settings },
     ],
