@@ -338,14 +338,16 @@ export function TransactionTable({
                       </td>
                       <td className="px-4 py-3 border-2 border-border">
                         <Badge
-                          variant={
+                          variant="outline"
+                          className={`capitalize text-xs ${
                             tx.priority === "urgent"
-                              ? "destructive"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                               : tx.priority === "high"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="capitalize text-xs"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                              : tx.priority === "normal"
+                              ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                              : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          }`}
                         >
                           {tx.priority}
                         </Badge>

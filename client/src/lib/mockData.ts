@@ -536,7 +536,7 @@ export interface MockCheckerQueueItem {
   referenceNumber: string;
   action: "create" | "update" | "delete";
   status: "pending" | "approved" | "rejected" | "sent_back";
-  priority: "normal" | "high" | "urgent";
+  priority: "low" | "normal" | "high" | "urgent";
   makerId: string;
   makerName: string;
   makerDepartment: string;
@@ -550,6 +550,8 @@ export interface MockCheckerQueueItem {
   amount: string;
   currency: string;
   description: string;
+  // Product-specific form data
+  metadata?: Record<string, string>;
 }
 
 const queueStatuses = ["pending", "pending", "pending", "approved", "rejected", "sent_back"] as const;

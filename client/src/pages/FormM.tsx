@@ -77,13 +77,14 @@ export default function FormM() {
   };
 
   const handleDuplicate = (tx: Transaction) => {
+    const now = new Date();
     const duplicatedTx: Transaction = {
       ...tx,
       id: `tx-${Date.now()}`,
       referenceNumber: generateReferenceNumber(),
       status: "draft",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     setTransactions((prev) => [duplicatedTx, ...prev]);
     toast({
@@ -92,10 +93,11 @@ export default function FormM() {
     });
   };
 
-  const handleSave = (data: Partial<Transaction>) => {
+  const handleSave = (data: Partial<Transaction> & { formData?: Record<string, string> }) => {
     if (modalMode === "create") {
-      // Create new transaction
+      // Create new transaction with product-specific form data stored in metadata
       const refNumber = generateReferenceNumber();
+      const now = new Date();
       const newTx: Transaction = {
         id: `tx-${Date.now()}`,
         referenceNumber: refNumber,
@@ -106,24 +108,39 @@ export default function FormM() {
         currency: data.currency || "USD",
         description: data.description || "",
         priority: (data.priority as "low" | "normal" | "high" | "urgent") || "normal",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        // Store product-specific form data in metadata
+        metadata: data.formData || {},
+        assignedTo: null,
+        dueDate: null,
+        completedAt: null,
+        createdBy: user?.id || null,
+        createdAt: now,
+        updatedAt: now,
       };
       setTransactions((prev) => [newTx, ...prev]);
 
-      // Add to checker queue
+      // Add to checker queue with all required fields including metadata
       const customer = mockCustomers.find((c) => c.id === data.customerId);
       addToQueue({
         referenceNumber: refNumber,
         entityType: "FORMM",
         entityId: newTx.id,
+        action: "create",
         customerName: customer?.name || "Unknown Customer",
         amount: data.amount || "0",
         currency: data.currency || "USD",
-        priority: (data.priority as "normal" | "high" | "urgent") || "normal",
+        description: data.description || "New Form M transaction",
+        priority: (data.priority as "low" | "normal" | "high" | "urgent") || "normal",
+        makerId: user?.id || "user-001",
         makerName: user ? `${user.firstName} ${user.lastName}` : "Current User",
         makerDepartment: "Trade Finance",
         makerComments: data.description || "",
+        checkerId: null,
+        checkerName: null,
+        checkerComments: null,
+        checkedAt: null,
+        // Include product-specific form data for checker review
+        metadata: data.formData || {},
       });
 
       toast({
@@ -131,11 +148,16 @@ export default function FormM() {
         description: `${refNumber} has been created and submitted for checker approval.`,
       });
     } else if (modalMode === "edit" && selectedTx) {
-      // Update existing transaction
+      // Update existing transaction with product-specific form data in metadata
       setTransactions((prev) =>
         prev.map((tx) =>
           tx.id === selectedTx.id
-            ? { ...tx, ...data, updatedAt: new Date().toISOString() }
+            ? {
+                ...tx,
+                ...data,
+                metadata: data.formData || tx.metadata,
+                updatedAt: new Date(),
+              }
             : tx
         )
       );

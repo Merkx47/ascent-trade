@@ -34,8 +34,9 @@ interface ProductPageProps {
 }
 
 const productConfig: Record<string, { name: string; description: string }> = {
-  FORMA: { name: "Form A", description: "Process invisible/service payments" },
-  FORMNXP: { name: "Form NXP", description: "Export documentation management" },
+  FORMM: { name: "Form M", description: "Import documentation & FX application" },
+  FORMA: { name: "Form A", description: "Forex declaration for remittances" },
+  FORMNXP: { name: "Form NXP", description: "Export documentation & proceeds" },
   PAAR: { name: "PAAR", description: "Pre-Arrival Assessment Reports" },
   IMPORTLC: { name: "Import LC", description: "Letters of Credit for imports" },
   BFC: { name: "Bills for Collection", description: "Documentary collections" },
@@ -46,6 +47,7 @@ const productConfig: Record<string, { name: string; description: string }> = {
 };
 
 const productIcons: Record<string, LucideIcon> = {
+  FORMM: FileText,
   FORMA: FileCheck,
   FORMNXP: FileSpreadsheet,
   PAAR: FileSearch,
@@ -58,6 +60,7 @@ const productIcons: Record<string, LucideIcon> = {
 };
 
 const productColors: Record<string, string> = {
+  FORMM: "bg-indigo-500",
   FORMA: "bg-green-500",
   FORMNXP: "bg-teal-500",
   PAAR: "bg-orange-500",
@@ -133,13 +136,14 @@ export default function ProductPage({ productCode }: ProductPageProps) {
   };
 
   const handleDuplicate = (tx: Transaction) => {
+    const now = new Date();
     const duplicatedTx: Transaction = {
       ...tx,
       id: `tx-${Date.now()}`,
       referenceNumber: generateReferenceNumber(productCode),
       status: "draft",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     setTransactions((prev) => [duplicatedTx, ...prev]);
     toast({
@@ -148,10 +152,11 @@ export default function ProductPage({ productCode }: ProductPageProps) {
     });
   };
 
-  const handleSave = (data: Partial<Transaction>) => {
+  const handleSave = (data: Partial<Transaction> & { formData?: Record<string, string> }) => {
     if (modalMode === "create") {
-      // Create new transaction
+      // Create new transaction with product-specific form data stored in metadata
       const refNumber = generateReferenceNumber(productCode);
+      const now = new Date();
       const newTx: Transaction = {
         id: `tx-${Date.now()}`,
         referenceNumber: refNumber,
@@ -162,24 +167,39 @@ export default function ProductPage({ productCode }: ProductPageProps) {
         currency: data.currency || "USD",
         description: data.description || "",
         priority: (data.priority as "low" | "normal" | "high" | "urgent") || "normal",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        // Store product-specific form data in metadata
+        metadata: data.formData || {},
+        assignedTo: null,
+        dueDate: null,
+        completedAt: null,
+        createdBy: user?.id || null,
+        createdAt: now,
+        updatedAt: now,
       };
       setTransactions((prev) => [newTx, ...prev]);
 
-      // Add to checker queue
+      // Add to checker queue with all required fields including metadata
       const customer = mockCustomers.find((c) => c.id === data.customerId);
       addToQueue({
         referenceNumber: refNumber,
         entityType: productCode,
         entityId: newTx.id,
+        action: "create",
         customerName: customer?.name || "Unknown Customer",
         amount: data.amount || "0",
         currency: data.currency || "USD",
-        priority: (data.priority as "normal" | "high" | "urgent") || "normal",
+        description: data.description || `New ${productInfo?.name || productCode} transaction`,
+        priority: (data.priority as "low" | "normal" | "high" | "urgent") || "normal",
+        makerId: user?.id || "user-001",
         makerName: user ? `${user.firstName} ${user.lastName}` : "Current User",
         makerDepartment: "Trade Finance",
         makerComments: data.description || "",
+        checkerId: null,
+        checkerName: null,
+        checkerComments: null,
+        checkedAt: null,
+        // Include product-specific form data for checker review
+        metadata: data.formData || {},
       });
 
       toast({
@@ -187,11 +207,16 @@ export default function ProductPage({ productCode }: ProductPageProps) {
         description: `${refNumber} has been created and submitted for checker approval.`,
       });
     } else if (modalMode === "edit" && selectedTx) {
-      // Update existing transaction
+      // Update existing transaction with product-specific form data in metadata
       setTransactions((prev) =>
         prev.map((tx) =>
           tx.id === selectedTx.id
-            ? { ...tx, ...data, updatedAt: new Date().toISOString() }
+            ? {
+                ...tx,
+                ...data,
+                metadata: data.formData || tx.metadata,
+                updatedAt: new Date(),
+              }
             : tx
         )
       );

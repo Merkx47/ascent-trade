@@ -14,6 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   ClipboardCheck,
   CheckCircle2,
   XCircle,
@@ -24,9 +29,11 @@ import {
   DollarSign,
   FileText,
   AlertTriangle,
-  Clock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { type MockCheckerQueueItem } from "@/lib/mockData";
+import { getProductFormConfig } from "@/lib/tradeProductForms";
 import { format } from "date-fns";
 
 interface ApprovalModalProps {
@@ -53,8 +60,13 @@ const productLabels: Record<string, string> = {
 export function ApprovalModal({ isOpen, onClose, item, onAction }: ApprovalModalProps) {
   const [comments, setComments] = useState("");
   const [activeAction, setActiveAction] = useState<"approve" | "reject" | "send_back" | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   if (!item) return null;
+
+  const formConfig = getProductFormConfig(item.entityType);
+  const metadata = item.metadata || {};
+  const hasMetadata = Object.keys(metadata).length > 0;
 
   const handleAction = (action: "approve" | "reject" | "send_back") => {
     if (action !== "approve" && !comments.trim()) {
@@ -74,23 +86,145 @@ export function ApprovalModal({ isOpen, onClose, item, onAction }: ApprovalModal
     return `${currency} ${num.toLocaleString()}`;
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "text-red-600 bg-red-100 dark:bg-red-900/30";
-      case "high":
-        return "text-blue-600 bg-blue-100 dark:bg-blue-900/30";
-      default:
-        return "text-gray-600 bg-gray-100 dark:bg-gray-800";
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
+
+  // Get field label from config or fallback to formatted key
+  const getFieldLabel = (fieldName: string): string => {
+    if (formConfig) {
+      for (const section of formConfig.sections) {
+        const field = section.fields.find((f) => f.name === fieldName);
+        if (field) return field.label;
+      }
     }
+    // Fallback: convert camelCase to Title Case
+    return fieldName
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  };
+
+  // Get field value with proper display formatting
+  const getFieldDisplayValue = (fieldName: string, value: string): string => {
+    if (!value) return "-";
+
+    if (formConfig) {
+      for (const section of formConfig.sections) {
+        const field = section.fields.find((f) => f.name === fieldName);
+        if (field && field.type === "select" && field.options) {
+          const option = field.options.find((o) => o.value === value);
+          if (option) return option.label;
+        }
+      }
+    }
+    return value;
   };
 
   const isPending = item.status === "pending";
 
+  // Render product-specific form data by sections
+  const renderProductDetails = () => {
+    if (!hasMetadata) return null;
+
+    if (formConfig) {
+      // Render using form config sections
+      return (
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            {formConfig.productName} Details
+          </h4>
+          {formConfig.sections.map((section) => {
+            // Check if section has any filled values
+            const sectionHasData = section.fields.some(
+              (field) => metadata[field.name] && metadata[field.name].trim() !== ""
+            );
+            if (!sectionHasData) return null;
+
+            const isExpanded = expandedSections[section.id] !== false; // Default to expanded
+
+            return (
+              <Collapsible
+                key={section.id}
+                open={isExpanded}
+                onOpenChange={() => toggleSection(section.id)}
+              >
+                <div className="border-2 border-border rounded-lg overflow-hidden">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between px-4 py-2 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <span className="text-sm font-medium">{section.title}</span>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="p-4 grid grid-cols-2 gap-3">
+                      {section.fields.map((field) => {
+                        const value = metadata[field.name];
+                        if (!value || value.trim() === "") return null;
+
+                        return (
+                          <div
+                            key={field.name}
+                            className={`${field.span === 2 ? "col-span-2" : ""}`}
+                          >
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {field.label}
+                            </p>
+                            <p className="text-sm font-medium break-words">
+                              {getFieldDisplayValue(field.name, value)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Fallback: render metadata as simple key-value pairs
+    return (
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          Transaction Details
+        </h4>
+        <div className="border-2 border-border rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-3">
+            {Object.entries(metadata).map(([key, value]) => {
+              if (!value || (typeof value === "string" && value.trim() === "")) return null;
+              return (
+                <div key={key}>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {getFieldLabel(key)}
+                  </p>
+                  <p className="text-sm font-medium break-words">{value}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl border-2 border-border max-h-[90vh]">
-        <DialogHeader className="border-b border-border pb-4 px-6">
+      <DialogContent className="max-w-3xl border-2 border-border p-0 max-h-[90vh] flex flex-col">
+        <DialogHeader className="border-b-2 border-border px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -111,7 +245,7 @@ export function ApprovalModal({ isOpen, onClose, item, onAction }: ApprovalModal
                 </Badge>
               )}
               {item.priority === "high" && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                   High Priority
                 </Badge>
               )}
@@ -119,7 +253,7 @@ export function ApprovalModal({ isOpen, onClose, item, onAction }: ApprovalModal
           </div>
         </DialogHeader>
 
-        <div className="px-6 py-4 space-y-4 max-h-[calc(80vh-12rem)] overflow-y-auto">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           {/* Transaction Summary */}
           <div className="grid grid-cols-2 gap-4">
             <Card className="border-2 border-border">
@@ -143,15 +277,25 @@ export function ApprovalModal({ isOpen, onClose, item, onAction }: ApprovalModal
           </div>
 
           {/* Description */}
-          <Card className="border-2 border-border">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                <FileText className="w-4 h-4" />
-                Description
-              </div>
-              <p className="text-sm">{item.description}</p>
-            </CardContent>
-          </Card>
+          {item.description && (
+            <Card className="border-2 border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                  <FileText className="w-4 h-4" />
+                  Description
+                </div>
+                <p className="text-sm">{item.description}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Product-Specific Details */}
+          {hasMetadata && (
+            <>
+              <Separator />
+              {renderProductDetails()}
+            </>
+          )}
 
           <Separator />
 
@@ -262,7 +406,7 @@ export function ApprovalModal({ isOpen, onClose, item, onAction }: ApprovalModal
           )}
         </div>
 
-        <DialogFooter className="border-t border-border pt-4 px-6 gap-3 flex-wrap">
+        <DialogFooter className="border-t-2 border-border px-6 py-4 flex-shrink-0 bg-muted/30 gap-3 flex-wrap">
           <Button variant="outline" onClick={onClose} className="border-border">
             Close
           </Button>
