@@ -558,6 +558,117 @@ const queueStatuses = ["pending", "pending", "pending", "approved", "rejected", 
 const queuePriorities = ["normal", "normal", "high", "urgent"] as const;
 const queueActions = ["create", "update"] as const;
 
+// Generate sample metadata based on product type
+const generateQueueMetadata = (productType: string, customer: MockCustomer, tx: typeof mockTransactions[0]): Record<string, string> => {
+  const baseMetadata = {
+    businessName: customer.name,
+    businessAddress: customer.address,
+    rcNumber: customer.rcNumber,
+    tin: customer.tin,
+    bankAccountNumber: customer.accountNumber,
+    email: customer.email,
+    phone: customer.phone,
+    bankName: "Union Bank of Nigeria",
+  };
+
+  const shippingModes = ["sea", "air", "land", "multimodal"];
+  const countries = ["CN", "US", "GB", "DE", "IN", "JP"];
+  const incoterms = ["FOB", "CIF", "CFR", "EXW", "DDP"];
+
+  switch (productType) {
+    case "FORMM":
+      return {
+        ...baseMetadata,
+        purposeOfImport: "goods_import",
+        countryOfOrigin: countries[Math.floor(Math.random() * countries.length)],
+        productDescription: tx.description || "Imported goods",
+        invoiceAmount: tx.amount || "0",
+        currency: tx.currency || "USD",
+        quantity: `${Math.floor(Math.random() * 100) + 10} units`,
+        shippingMode: shippingModes[Math.floor(Math.random() * shippingModes.length)],
+        proformaInvoiceNumber: `PI-${Math.floor(Math.random() * 90000) + 10000}`,
+        hsCode: `${Math.floor(Math.random() * 9000) + 1000}.${Math.floor(Math.random() * 90) + 10}`,
+      };
+    case "FORMA":
+      return {
+        ...baseMetadata,
+        companyAddress: customer.address,
+        natureOfBusiness: "trading",
+        amount: tx.amount || "0",
+        currency: tx.currency || "USD",
+        purposeOfTransaction: "goods_import",
+        beneficiaryName: `${nigerianCompanies[Math.floor(Math.random() * nigerianCompanies.length)]} Ltd`,
+        beneficiaryCountry: countries[Math.floor(Math.random() * countries.length)],
+        paymentMode: "wire",
+        invoiceNumber: `INV-${Math.floor(Math.random() * 90000) + 10000}`,
+      };
+    case "FORMNXP":
+      return {
+        ...baseMetadata,
+        exporterName: customer.name,
+        exporterAddress: customer.address,
+        nepcRegistrationNumber: `NEPC/${Math.floor(Math.random() * 9000) + 1000}`,
+        productDescription: tx.description || "Export goods",
+        exportValue: tx.amount || "0",
+        currency: tx.currency || "USD",
+        destinationCountry: countries[Math.floor(Math.random() * countries.length)],
+        portOfLoading: "apapa",
+        shippingMode: shippingModes[Math.floor(Math.random() * shippingModes.length)],
+      };
+    case "PAAR":
+      return {
+        ...baseMetadata,
+        importerName: customer.name,
+        importerAddress: customer.address,
+        paarNumber: `PAAR/${new Date().getFullYear()}/${Math.floor(Math.random() * 90000) + 10000}`,
+        assessmentValue: tx.amount || "0",
+        currency: tx.currency || "USD",
+        customsOffice: "Apapa Customs Command",
+        goodsDescription: tx.description || "Imported goods",
+        hsCode: `${Math.floor(Math.random() * 9000) + 1000}.${Math.floor(Math.random() * 90) + 10}`,
+      };
+    case "IMPORTLC":
+      return {
+        ...baseMetadata,
+        applicantName: customer.name,
+        applicantAddress: customer.address,
+        beneficiaryName: `${nigerianCompanies[Math.floor(Math.random() * nigerianCompanies.length)]} International`,
+        beneficiaryCountry: countries[Math.floor(Math.random() * countries.length)],
+        lcAmount: tx.amount || "0",
+        currency: tx.currency || "USD",
+        lcType: "irrevocable",
+        paymentTerms: "at_sight",
+        incoterms: incoterms[Math.floor(Math.random() * incoterms.length)],
+        goodsDescription: tx.description || "Letter of Credit goods",
+      };
+    case "BFC":
+      return {
+        ...baseMetadata,
+        drawerName: customer.name,
+        drawerAddress: customer.address,
+        draweeBank: `${nigerianCompanies[Math.floor(Math.random() * nigerianCompanies.length)]} Bank`,
+        collectionAmount: tx.amount || "0",
+        currency: tx.currency || "USD",
+        collectionType: "dp",
+        goodsDescription: tx.description || "Documentary collection goods",
+      };
+    case "SHIPPINGDOC":
+      return {
+        ...baseMetadata,
+        consigneeName: customer.name,
+        consigneeAddress: customer.address,
+        blNumber: `BL-${Math.floor(Math.random() * 90000000) + 10000000}`,
+        vesselName: `MV ${["Atlantic", "Pacific", "Ocean", "Star", "Express"][Math.floor(Math.random() * 5)]} ${Math.floor(Math.random() * 100)}`,
+        portOfLoading: "Shanghai Port",
+        portOfDischarge: "apapa",
+        goodsDescription: tx.description || "Shipped goods",
+        containerCount: `${Math.floor(Math.random() * 10) + 1} x 40ft`,
+      };
+    default:
+      return baseMetadata;
+  }
+};
+
 export const mockCheckerQueue: MockCheckerQueueItem[] = Array.from({ length: 45 }, (_, i) => {
   const productType = productTypes[i % productTypes.length];
   const maker = mockUsers[i % mockUsers.length];
@@ -592,6 +703,7 @@ export const mockCheckerQueue: MockCheckerQueueItem[] = Array.from({ length: 45 
     amount: tx.amount || "0",
     currency: tx.currency || "USD",
     description: tx.description || "Transaction",
+    metadata: generateQueueMetadata(productType, customer, tx),
   };
 });
 

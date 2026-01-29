@@ -116,7 +116,65 @@ export function TransactionModal({
     ? mockCustomers.find((c) => c.id === transaction.customerId)
     : null;
 
+  // Map customer data to form field names for auto-population
+  const getCustomerAutoFillData = (selectedCustomer: typeof mockCustomers[0]) => {
+    return {
+      // Importer/Business info
+      businessName: selectedCustomer.name,
+      businessAddress: selectedCustomer.address,
+      companyAddress: selectedCustomer.address,
+      applicantName: selectedCustomer.name,
+      applicantAddress: selectedCustomer.address,
+      exporterName: selectedCustomer.name,
+      exporterAddress: selectedCustomer.address,
+      importerName: selectedCustomer.name,
+      importerAddress: selectedCustomer.address,
+      // Regulatory IDs
+      rcNumber: selectedCustomer.rcNumber,
+      tin: selectedCustomer.tin,
+      // Bank account info
+      bankAccountNumber: selectedCustomer.accountNumber,
+      accountNumber: selectedCustomer.accountNumber,
+      accountName: selectedCustomer.accountName,
+      // Contact info
+      email: selectedCustomer.email,
+      phone: selectedCustomer.phone,
+      // Default bank info for Union Bank
+      bankName: "Union Bank of Nigeria",
+    };
+  };
+
   const handleFieldChange = (fieldName: string, value: string) => {
+    if (fieldName === "customerId" && value) {
+      // Auto-populate customer-related fields when customer is selected
+      const selectedCustomer = mockCustomers.find((c) => c.id === value);
+      if (selectedCustomer) {
+        const autoFillData = getCustomerAutoFillData(selectedCustomer);
+        setFormData((prev) => ({
+          ...prev,
+          [fieldName]: value,
+          // Only auto-fill fields that are empty or in create mode
+          ...(mode === "create" || !prev.businessName ? { businessName: autoFillData.businessName } : {}),
+          ...(mode === "create" || !prev.businessAddress ? { businessAddress: autoFillData.businessAddress } : {}),
+          ...(mode === "create" || !prev.companyAddress ? { companyAddress: autoFillData.companyAddress } : {}),
+          ...(mode === "create" || !prev.applicantName ? { applicantName: autoFillData.applicantName } : {}),
+          ...(mode === "create" || !prev.applicantAddress ? { applicantAddress: autoFillData.applicantAddress } : {}),
+          ...(mode === "create" || !prev.exporterName ? { exporterName: autoFillData.exporterName } : {}),
+          ...(mode === "create" || !prev.exporterAddress ? { exporterAddress: autoFillData.exporterAddress } : {}),
+          ...(mode === "create" || !prev.importerName ? { importerName: autoFillData.importerName } : {}),
+          ...(mode === "create" || !prev.importerAddress ? { importerAddress: autoFillData.importerAddress } : {}),
+          ...(mode === "create" || !prev.rcNumber ? { rcNumber: autoFillData.rcNumber } : {}),
+          ...(mode === "create" || !prev.tin ? { tin: autoFillData.tin } : {}),
+          ...(mode === "create" || !prev.bankAccountNumber ? { bankAccountNumber: autoFillData.bankAccountNumber } : {}),
+          ...(mode === "create" || !prev.accountNumber ? { accountNumber: autoFillData.accountNumber } : {}),
+          ...(mode === "create" || !prev.accountName ? { accountName: autoFillData.accountName } : {}),
+          ...(mode === "create" || !prev.email ? { email: autoFillData.email } : {}),
+          ...(mode === "create" || !prev.phone ? { phone: autoFillData.phone } : {}),
+          ...(mode === "create" || !prev.bankName ? { bankName: autoFillData.bankName } : {}),
+        }));
+        return;
+      }
+    }
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
