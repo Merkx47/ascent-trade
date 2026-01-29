@@ -27,7 +27,7 @@ const generateReferenceNumber = (): string => {
 
 export default function FormM() {
   const { toast } = useToast();
-  const { addToQueue } = useCheckerQueue();
+  const { addToQueue, transactionStatusUpdates } = useCheckerQueue();
   const { user } = useAuth();
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [modalMode, setModalMode] = useState<"view" | "edit" | "create">("view");
@@ -41,6 +41,21 @@ export default function FormM() {
     const initialData = getTransactionsByProduct("FORMM");
     setTransactions(initialData);
   }, []);
+
+  // Sync transaction status with checker queue updates
+  useEffect(() => {
+    if (transactionStatusUpdates.length > 0) {
+      setTransactions((prev) =>
+        prev.map((tx) => {
+          const statusUpdate = transactionStatusUpdates.find((u) => u.entityId === tx.id);
+          if (statusUpdate) {
+            return { ...tx, status: statusUpdate.status };
+          }
+          return tx;
+        })
+      );
+    }
+  }, [transactionStatusUpdates]);
 
   const activeTransactions = transactions.filter((tx) =>
     ["pending", "under_review", "approved"].includes(tx.status)

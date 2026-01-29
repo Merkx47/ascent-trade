@@ -82,7 +82,7 @@ const generateReferenceNumber = (productCode: string): string => {
 
 export default function ProductPage({ productCode }: ProductPageProps) {
   const { toast } = useToast();
-  const { addToQueue } = useCheckerQueue();
+  const { addToQueue, transactionStatusUpdates } = useCheckerQueue();
   const { user } = useAuth();
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [modalMode, setModalMode] = useState<"view" | "edit" | "create">("view");
@@ -96,6 +96,21 @@ export default function ProductPage({ productCode }: ProductPageProps) {
     const initialData = getTransactionsByProduct(productCode);
     setTransactions(initialData);
   }, [productCode]);
+
+  // Sync transaction status with checker queue updates
+  useEffect(() => {
+    if (transactionStatusUpdates.length > 0) {
+      setTransactions((prev) =>
+        prev.map((tx) => {
+          const statusUpdate = transactionStatusUpdates.find((u) => u.entityId === tx.id);
+          if (statusUpdate) {
+            return { ...tx, status: statusUpdate.status };
+          }
+          return tx;
+        })
+      );
+    }
+  }, [transactionStatusUpdates]);
 
   const productInfo = productConfig[productCode];
   const Icon = productIcons[productCode] || FileText;

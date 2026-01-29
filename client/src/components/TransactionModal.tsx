@@ -182,10 +182,25 @@ export function TransactionModal({
     // Extract the main transaction fields
     const { customerId, amount, currency, description, priority, status, ...productFormData } = formData;
 
+    // Get amount from product-specific field if main amount is empty
+    // Different products store amount in different fields
+    const effectiveAmount = amount ||
+      productFormData.invoiceAmount ||  // Form M
+      productFormData.exportValue ||     // Form NXP
+      productFormData.assessmentValue || // PAAR
+      productFormData.lcAmount ||        // Import LC
+      productFormData.totalAmount ||     // BFC (Bills for Collection)
+      productFormData.freightAmount ||   // Shipping Docs
+      productFormData.insuredValue ||    // Shipping Docs (alternative)
+      "0";
+
+    // Get currency from product-specific field if not set
+    const effectiveCurrency = currency || productFormData.currency || "USD";
+
     onSave?.({
       customerId,
-      amount,
-      currency,
+      amount: effectiveAmount,
+      currency: effectiveCurrency,
       description,
       priority,
       status,

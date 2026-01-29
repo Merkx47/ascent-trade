@@ -647,7 +647,7 @@ const generateQueueMetadata = (productType: string, customer: MockCustomer, tx: 
         drawerName: customer.name,
         drawerAddress: customer.address,
         draweeBank: `${nigerianCompanies[Math.floor(Math.random() * nigerianCompanies.length)]} Bank`,
-        collectionAmount: tx.amount || "0",
+        totalAmount: tx.amount || "0",
         currency: tx.currency || "USD",
         collectionType: "dp",
         goodsDescription: tx.description || "Documentary collection goods",
@@ -663,6 +663,8 @@ const generateQueueMetadata = (productType: string, customer: MockCustomer, tx: 
         portOfDischarge: "apapa",
         goodsDescription: tx.description || "Shipped goods",
         containerCount: `${Math.floor(Math.random() * 10) + 1} x 40ft`,
+        freightAmount: tx.amount || "0",
+        currency: tx.currency || "USD",
       };
     default:
       return baseMetadata;
