@@ -406,7 +406,7 @@ export default function CheckerQueue() {
                 <TableHead className="border-2 border-gray-300 dark:border-gray-600 font-semibold">Submitted</TableHead>
                 <TableHead className="border-2 border-gray-300 dark:border-gray-600 font-semibold">Priority</TableHead>
                 <TableHead className="border-2 border-gray-300 dark:border-gray-600 font-semibold">Status</TableHead>
-                <TableHead className="text-right border-2 border-gray-300 dark:border-gray-600 font-semibold">Actions</TableHead>
+                <TableHead className="text-left border-2 border-gray-300 dark:border-gray-600 font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
