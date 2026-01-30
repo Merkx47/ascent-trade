@@ -146,6 +146,7 @@ export interface MockCustomer {
   relationshipManager: string;
   sector: string;
   status: string;
+  approvalStatus: "pending" | "approved" | "rejected" | "under_review";
   totalTransactions: number;
   totalVolume: number;
   currency: string;
@@ -219,6 +220,7 @@ export const mockCustomers: MockCustomer[] = Array.from({ length: 100 }, (_, i) 
     relationshipManager: rm.fullName,
     sector: sectors[i % sectors.length],
     status: Math.random() > 0.1 ? "active" : "inactive",
+    approvalStatus: "approved", // Existing customers are pre-approved
     totalTransactions: Math.floor(Math.random() * 50) + 1,
     totalVolume: Math.floor(Math.random() * 100000000) + 1000000,
     currency: "NGN",

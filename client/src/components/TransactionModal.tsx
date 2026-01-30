@@ -355,11 +355,14 @@ export function TransactionModal({
               <SelectValue placeholder="Select customer" />
             </SelectTrigger>
             <SelectContent>
-              {mockCustomers.slice(0, 20).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
+              {mockCustomers
+                .filter((c) => c.approvalStatus === "approved")
+                .slice(0, 30)
+                .map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -479,11 +482,14 @@ export function TransactionModal({
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockCustomers.slice(0, 30).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
+                  {mockCustomers
+                    .filter((c) => c.approvalStatus === "approved")
+                    .slice(0, 30)
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

@@ -630,6 +630,42 @@ const shippingDocumentsConfig: ProductFormConfig = {
   ],
 };
 
+// ==================== CUSTOMER ====================
+const customerConfig: ProductFormConfig = {
+  productCode: 'CUSTOMER',
+  productName: 'Customer Registration',
+  sections: [
+    {
+      id: 'business_info',
+      title: 'Business Information',
+      fields: [
+        { name: 'businessName', label: 'Business Name', type: 'text', required: true, placeholder: 'Registered company name' },
+        { name: 'businessAddress', label: 'Business Address', type: 'textarea', required: true, placeholder: 'Full registered address', span: 2 },
+        { name: 'rcNumber', label: 'RC Number (CAC)', type: 'text', required: true, placeholder: 'e.g., RC123456' },
+        { name: 'tin', label: 'Tax Identification Number (TIN)', type: 'text', required: true, placeholder: 'Enter TIN' },
+        { name: 'sector', label: 'Business Sector', type: 'select', required: true, options: businessNatureOptions },
+      ],
+    },
+    {
+      id: 'account_info',
+      title: 'Account Information',
+      fields: [
+        { name: 'accountNumber', label: 'Account Number', type: 'text', required: true, placeholder: 'Bank account number' },
+        { name: 'accountName', label: 'Account Name', type: 'text', required: true, placeholder: 'Name on account' },
+      ],
+    },
+    {
+      id: 'contact_info',
+      title: 'Contact Information',
+      fields: [
+        { name: 'email', label: 'Email Address', type: 'text', required: true, placeholder: 'company@example.com' },
+        { name: 'phone', label: 'Phone Number', type: 'text', required: true, placeholder: '+234...' },
+        { name: 'relationshipManager', label: 'Relationship Manager', type: 'text', required: false, placeholder: 'RM name' },
+      ],
+    },
+  ],
+};
+
 // ==================== EXPORT ALL CONFIGS ====================
 export const tradeProductForms: Record<string, ProductFormConfig> = {
   FORMM: formMConfig,
@@ -639,6 +675,7 @@ export const tradeProductForms: Record<string, ProductFormConfig> = {
   IMPORTLC: importLCConfig,
   BFC: billsForCollectionConfig,
   SHIPPINGDOC: shippingDocumentsConfig,
+  CUSTOMER: customerConfig,
 };
 
 // Helper function to get form config by product code

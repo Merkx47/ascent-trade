@@ -43,6 +43,7 @@ import {
   ArrowUpFromLine,
   Timer,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import { ApprovalModal } from "@/components/ApprovalModal";
 import { type MockCheckerQueueItem } from "@/lib/mockData";
@@ -62,6 +63,7 @@ const productIcons: Record<string, any> = {
   LOAN: FileText,
   INWCP: ArrowDownToLine,
   DOMOUTAC: ArrowUpFromLine,
+  CUSTOMER: Users,
 };
 
 const productLabels: Record<string, string> = {
@@ -76,6 +78,7 @@ const productLabels: Record<string, string> = {
   LOAN: "Trade Loan",
   INWCP: "Inward Payment",
   DOMOUTAC: "Outward Payment",
+  CUSTOMER: "Customer",
 };
 
 export default function CheckerQueue() {
@@ -379,6 +382,14 @@ export default function CheckerQueue() {
             {(tabCounts.INWCP || 0) + (tabCounts.DOMOUTAC || 0) > 0 && (
               <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
                 {(tabCounts.INWCP || 0) + (tabCounts.DOMOUTAC || 0)}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="CUSTOMER">
+            Customers
+            {tabCounts.CUSTOMER > 0 && (
+              <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                {tabCounts.CUSTOMER}
               </Badge>
             )}
           </TabsTrigger>

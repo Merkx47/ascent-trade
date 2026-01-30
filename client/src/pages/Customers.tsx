@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,13 +54,20 @@ import {
   Download,
   Copy,
   Trash2,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { exportToExcel, formatCustomerForExport } from "@/lib/exportUtils";
 import { CustomerModal } from "@/components/CustomerModal";
 import { useToast } from "@/hooks/use-toast";
+import { useCheckerQueue } from "@/contexts/CheckerQueueContext";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Customers() {
   const { toast } = useToast();
+  const { addToQueue, transactionStatusUpdates } = useCheckerQueue();
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<MockCustomer[]>(initialMockCustomers);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -75,6 +82,22 @@ export default function Customers() {
   // Delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<MockCustomer | null>(null);
+
+  // Sync customer approval status with checker queue updates
+  useEffect(() => {
+    if (transactionStatusUpdates.length > 0) {
+      setCustomers((prev) =>
+        prev.map((customer) => {
+          const statusUpdate = transactionStatusUpdates.find((u) => u.entityId === customer.id);
+          if (statusUpdate) {
+            const newApprovalStatus = statusUpdate.status as MockCustomer["approvalStatus"];
+            return { ...customer, approvalStatus: newApprovalStatus };
+          }
+          return customer;
+        })
+      );
+    }
+  }, [transactionStatusUpdates]);
 
   const customerTransactionCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -174,8 +197,9 @@ export default function Customers() {
 
   const handleSaveCustomer = (customerData: Partial<MockCustomer>) => {
     if (modalMode === "create") {
+      const customerId = customerData.id || `cust-${Date.now()}`;
       const newCustomer: MockCustomer = {
-        id: customerData.id || `cust-${Date.now()}`,
+        id: customerId,
         name: customerData.name || "",
         email: customerData.email || "",
         phone: customerData.phone || "",
@@ -187,14 +211,51 @@ export default function Customers() {
         relationshipManager: customerData.relationshipManager || "",
         sector: customerData.sector || "",
         status: customerData.status || "active",
+        approvalStatus: "pending", // New customers start as pending
         totalTransactions: 0,
         totalVolume: 0,
         currency: "NGN",
       };
+
+      // Add customer to local state
       setCustomers([newCustomer, ...customers]);
+
+      // Add to checker queue for approval
+      addToQueue({
+        entityType: "CUSTOMER",
+        entityId: customerId,
+        referenceNumber: `CUST-${Date.now().toString().slice(-8)}`,
+        action: "create",
+        priority: "normal",
+        makerId: user?.id || "user-001",
+        makerName: user ? `${user.firstName} ${user.lastName}` : "Current User",
+        makerDepartment: "Trade Finance",
+        makerComments: `New customer registration: ${newCustomer.name}`,
+        customerName: newCustomer.name,
+        amount: "0",
+        currency: "NGN",
+        description: `New customer: ${newCustomer.name} (${newCustomer.rcNumber})`,
+        checkerId: null,
+        checkerName: null,
+        checkerComments: null,
+        checkedAt: null,
+        metadata: {
+          businessName: newCustomer.name,
+          businessAddress: newCustomer.address,
+          rcNumber: newCustomer.rcNumber,
+          tin: newCustomer.tin,
+          accountNumber: newCustomer.accountNumber,
+          accountName: newCustomer.accountName,
+          email: newCustomer.email,
+          phone: newCustomer.phone,
+          sector: newCustomer.sector,
+          relationshipManager: newCustomer.relationshipManager,
+        },
+      });
+
       toast({
-        title: "Customer Created",
-        description: `${newCustomer.name} has been added successfully`,
+        title: "Customer Submitted for Approval",
+        description: `${newCustomer.name} has been submitted to checker queue`,
       });
     } else if (modalMode === "edit" && selectedCustomer) {
       setCustomers(
@@ -297,6 +358,7 @@ export default function Customers() {
                   <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">Account</th>
                   <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">RC Number</th>
                   <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border">Contact</th>
+                  <th className="text-center font-semibold text-sm px-4 py-3 border-2 border-border">Status</th>
                   <th className="text-center font-semibold text-sm px-4 py-3 border-2 border-border">Transactions</th>
                   <th className="text-left font-semibold text-sm px-4 py-3 border-2 border-border w-16">Actions</th>
                 </tr>
@@ -304,7 +366,7 @@ export default function Customers() {
               <tbody>
                 {paginatedCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-muted-foreground border-2 border-border">
+                    <td colSpan={7} className="text-center py-8 text-muted-foreground border-2 border-border">
                       No customers found
                     </td>
                   </tr>
@@ -352,6 +414,25 @@ export default function Customers() {
                             <span className="text-xs">{customer.phone}</span>
                           </div>
                         </div>
+                      </td>
+                      <td className="text-center px-4 py-3 border-2 border-border">
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            customer.approvalStatus === "approved"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : customer.approvalStatus === "pending"
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : customer.approvalStatus === "rejected"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                          }`}
+                        >
+                          {customer.approvalStatus === "approved" && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                          {customer.approvalStatus === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                          {customer.approvalStatus === "rejected" && <XCircle className="w-3 h-3 mr-1" />}
+                          {customer.approvalStatus.charAt(0).toUpperCase() + customer.approvalStatus.slice(1).replace("_", " ")}
+                        </Badge>
                       </td>
                       <td className="text-center px-4 py-3 border-2 border-border">
                         <span className="font-mono font-medium">
