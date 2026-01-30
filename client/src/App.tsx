@@ -33,6 +33,7 @@ import Compliance from "@/pages/Compliance";
 import Settings from "@/pages/Settings";
 import UserManagement from "@/pages/UserManagement";
 import CheckerQueue from "@/pages/CheckerQueue";
+import MyRequests from "@/pages/MyRequests";
 import NotFound from "@/pages/not-found";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -134,6 +135,7 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/user-management" component={UserManagement} />
         <Route path="/checker-queue" component={CheckerQueue} />
+        <Route path="/my-requests" component={MyRequests} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

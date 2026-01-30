@@ -16,6 +16,7 @@ import {
   Shield,
   Bell,
   ClipboardCheck,
+  ClipboardList,
   UserCog,
   type LucideIcon,
 } from "lucide-react";
@@ -71,6 +72,7 @@ export const navigationGroups: NavGroup[] = [
     title: "Workflow",
     items: [
       { title: "Checker Queue", href: "/checker-queue", icon: ClipboardCheck },
+      { title: "My Requests", href: "/my-requests", icon: ClipboardList },
     ],
   },
   {
