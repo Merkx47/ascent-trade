@@ -501,41 +501,17 @@ export default function MyRequests() {
 
       {/* Detail Modal */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl border-2 border-border p-0 max-h-[90vh] flex flex-col">
           {selectedItem && (
             <>
-              {/* Modal Header with Status */}
-              <div className={`-mx-6 -mt-6 px-6 py-4 border-b-2 ${
-                selectedItem.status === "approved"
-                  ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                  : selectedItem.status === "rejected"
-                  ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                  : selectedItem.status === "sent_back"
-                  ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
-                  : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
-              }`}>
-                <div className="flex items-start justify-between">
+              {/* Modal Header */}
+              <div className="border-b-2 border-border px-6 py-4 flex-shrink-0">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      selectedItem.status === "approved"
-                        ? "bg-green-100 dark:bg-green-800"
-                        : selectedItem.status === "rejected"
-                        ? "bg-red-100 dark:bg-red-800"
-                        : selectedItem.status === "sent_back"
-                        ? "bg-orange-100 dark:bg-orange-800"
-                        : "bg-yellow-100 dark:bg-yellow-800"
-                    }`}>
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       {(() => {
                         const Icon = productIcons[selectedItem.entityType] || FileText;
-                        return <Icon className={`w-6 h-6 ${
-                          selectedItem.status === "approved"
-                            ? "text-green-600 dark:text-green-400"
-                            : selectedItem.status === "rejected"
-                            ? "text-red-600 dark:text-red-400"
-                            : selectedItem.status === "sent_back"
-                            ? "text-orange-600 dark:text-orange-400"
-                            : "text-yellow-600 dark:text-yellow-400"
-                        }`} />;
+                        return <Icon className="w-5 h-5 text-primary" />;
                       })()}
                     </div>
                     <div>
@@ -547,7 +523,8 @@ export default function MyRequests() {
                 </div>
               </div>
 
-              <div className="space-y-5 pt-4">
+              {/* Modal Content */}
+              <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
                 {/* Checker Feedback - Prominent for rejected/sent_back */}
                 {(selectedItem.status === "rejected" || selectedItem.status === "sent_back") && (
                   <div className={`p-4 rounded-lg border-2 ${
@@ -637,68 +614,10 @@ export default function MyRequests() {
                   </div>
                 )}
 
-                {/* Request Details */}
-                <div className="border-2 rounded-lg overflow-hidden">
-                  <div className="bg-muted/50 px-4 py-2 border-b-2">
-                    <h4 className="font-semibold text-sm">Request Details</h4>
-                  </div>
-                  <div className="p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Customer</p>
-                        <p className="font-medium">{selectedItem.customerName || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Amount</p>
-                        <p className="font-mono font-semibold text-lg">
-                          {selectedItem.currency} {Number(selectedItem.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Submitted</p>
-                        <p className="font-medium">
-                          {format(new Date(selectedItem.submittedAt), "dd MMM yyyy")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(selectedItem.submittedAt), "HH:mm")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Priority</p>
-                        {getPriorityBadge(selectedItem.priority)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Maker Comments */}
-                {selectedItem.makerComments && (
-                  <div className="border-2 rounded-lg overflow-hidden">
-                    <div className="bg-muted/50 px-4 py-2 border-b-2">
-                      <h4 className="font-semibold text-sm">Your Comments</h4>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm">{selectedItem.makerComments}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Description */}
-                {selectedItem.description && (
-                  <div className="border-2 rounded-lg overflow-hidden">
-                    <div className="bg-muted/50 px-4 py-2 border-b-2">
-                      <h4 className="font-semibold text-sm">Description</h4>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-muted-foreground">{selectedItem.description}</p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Pending Status Info */}
                 {selectedItem.status === "pending" && (
                   <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-700">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                       <div>
                         <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
@@ -708,6 +627,67 @@ export default function MyRequests() {
                           Your request is in the queue and will be reviewed soon
                         </p>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Request Details */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Request Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-2 border-border">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground mb-1">Customer</p>
+                        <p className="font-medium">{selectedItem.customerName || "—"}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-2 border-border">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground mb-1">Amount</p>
+                        <p className="font-mono font-bold text-lg">
+                          {selectedItem.currency} {Number(selectedItem.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-2 border-border">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground mb-1">Submitted</p>
+                        <p className="font-medium">
+                          {format(new Date(selectedItem.submittedAt), "dd MMM yyyy, HH:mm")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-2 border-border">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground mb-1">Priority</p>
+                        <div className="mt-1">{getPriorityBadge(selectedItem.priority)}</div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Your Comments */}
+                {selectedItem.makerComments && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      Your Comments
+                    </h4>
+                    <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                      <p className="text-sm">{selectedItem.makerComments}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                {selectedItem.description && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      Description
+                    </h4>
+                    <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                      <p className="text-sm">{selectedItem.description}</p>
                     </div>
                   </div>
                 )}
