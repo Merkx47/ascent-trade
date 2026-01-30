@@ -30,9 +30,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Search,
@@ -51,7 +48,6 @@ import {
   ChevronRight,
   ClipboardList,
   Timer,
-  TrendingUp,
   Users,
   Eye,
   RotateCcw,
@@ -505,94 +501,218 @@ export default function MyRequests() {
 
       {/* Detail Modal */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedItem && (
-                <>
-                  {(() => {
-                    const Icon = productIcons[selectedItem.entityType] || FileText;
-                    return <Icon className="w-5 h-5" />;
-                  })()}
-                  {selectedItem.referenceNumber}
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedItem && productLabels[selectedItem.entityType]} Request Details
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           {selectedItem && (
-            <div className="space-y-4">
-              {/* Status Badge */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                {getStatusBadge(selectedItem.status)}
-              </div>
-
-              {/* Request Info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <p className="text-xs text-muted-foreground">Customer</p>
-                  <p className="font-medium">{selectedItem.customerName || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Amount</p>
-                  <p className="font-mono font-medium">
-                    {selectedItem.currency} {Number(selectedItem.amount || 0).toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Submitted</p>
-                  <p className="font-medium">
-                    {format(new Date(selectedItem.submittedAt), "dd MMM yyyy, HH:mm")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Priority</p>
-                  {getPriorityBadge(selectedItem.priority)}
-                </div>
-              </div>
-
-              {/* Maker Comments */}
-              {selectedItem.makerComments && (
-                <div className="p-4 border-2 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Your Comments</p>
-                  <p className="text-sm">{selectedItem.makerComments}</p>
-                </div>
-              )}
-
-              {/* Checker Feedback */}
-              {selectedItem.status !== "pending" && (
-                <div className="p-4 border-2 rounded-lg bg-muted/30">
-                  <p className="text-xs text-muted-foreground mb-2">Checker Feedback</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{selectedItem.checkerName || "Unknown"}</span>
-                      {selectedItem.checkedAt && (
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(selectedItem.checkedAt), "dd MMM yyyy, HH:mm")}
-                        </span>
-                      )}
+            <>
+              {/* Modal Header with Status */}
+              <div className={`-mx-6 -mt-6 px-6 py-4 border-b-2 ${
+                selectedItem.status === "approved"
+                  ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                  : selectedItem.status === "rejected"
+                  ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                  : selectedItem.status === "sent_back"
+                  ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
+                  : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+              }`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      selectedItem.status === "approved"
+                        ? "bg-green-100 dark:bg-green-800"
+                        : selectedItem.status === "rejected"
+                        ? "bg-red-100 dark:bg-red-800"
+                        : selectedItem.status === "sent_back"
+                        ? "bg-orange-100 dark:bg-orange-800"
+                        : "bg-yellow-100 dark:bg-yellow-800"
+                    }`}>
+                      {(() => {
+                        const Icon = productIcons[selectedItem.entityType] || FileText;
+                        return <Icon className={`w-6 h-6 ${
+                          selectedItem.status === "approved"
+                            ? "text-green-600 dark:text-green-400"
+                            : selectedItem.status === "rejected"
+                            ? "text-red-600 dark:text-red-400"
+                            : selectedItem.status === "sent_back"
+                            ? "text-orange-600 dark:text-orange-400"
+                            : "text-yellow-600 dark:text-yellow-400"
+                        }`} />;
+                      })()}
                     </div>
-                    {selectedItem.checkerComments && (
-                      <p className="text-sm text-muted-foreground">{selectedItem.checkerComments}</p>
-                    )}
+                    <div>
+                      <h2 className="text-lg font-semibold">{selectedItem.referenceNumber}</h2>
+                      <p className="text-sm text-muted-foreground">{productLabels[selectedItem.entityType]}</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(selectedItem.status)}
+                </div>
+              </div>
+
+              <div className="space-y-5 pt-4">
+                {/* Checker Feedback - Prominent for rejected/sent_back */}
+                {(selectedItem.status === "rejected" || selectedItem.status === "sent_back") && (
+                  <div className={`p-4 rounded-lg border-2 ${
+                    selectedItem.status === "rejected"
+                      ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700"
+                      : "bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700"
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        selectedItem.status === "rejected"
+                          ? "bg-red-100 dark:bg-red-800"
+                          : "bg-orange-100 dark:bg-orange-800"
+                      }`}>
+                        {selectedItem.status === "rejected" ? (
+                          <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className={`font-semibold ${
+                            selectedItem.status === "rejected"
+                              ? "text-red-700 dark:text-red-400"
+                              : "text-orange-700 dark:text-orange-400"
+                          }`}>
+                            {selectedItem.status === "rejected" ? "Request Rejected" : "Request Sent Back"}
+                          </h4>
+                          {selectedItem.checkedAt && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(selectedItem.checkedAt), "dd MMM yyyy, HH:mm")}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Reviewed by <span className="font-medium">{selectedItem.checkerName || "Checker"}</span>
+                        </p>
+                        {selectedItem.checkerComments ? (
+                          <div className={`p-3 rounded-md ${
+                            selectedItem.status === "rejected"
+                              ? "bg-red-100 dark:bg-red-800/50"
+                              : "bg-orange-100 dark:bg-orange-800/50"
+                          }`}>
+                            <p className="text-sm font-medium mb-1">Checker Comments:</p>
+                            <p className="text-sm">{selectedItem.checkerComments}</p>
+                          </div>
+                        ) : (
+                          <p className="text-sm italic text-muted-foreground">No comments provided</p>
+                        )}
+                        {selectedItem.status === "sent_back" && (
+                          <p className="text-xs mt-3 text-orange-600 dark:text-orange-400">
+                            Please review the feedback above and resubmit your request with the necessary corrections.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Approved Feedback */}
+                {selectedItem.status === "approved" && (
+                  <div className="p-4 rounded-lg border-2 bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-green-100 dark:bg-green-800">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-green-700 dark:text-green-400">Request Approved</h4>
+                          {selectedItem.checkedAt && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(selectedItem.checkedAt), "dd MMM yyyy, HH:mm")}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Approved by <span className="font-medium">{selectedItem.checkerName || "Checker"}</span>
+                        </p>
+                        {selectedItem.checkerComments && (
+                          <div className="p-3 rounded-md bg-green-100 dark:bg-green-800/50 mt-2">
+                            <p className="text-sm font-medium mb-1">Checker Comments:</p>
+                            <p className="text-sm">{selectedItem.checkerComments}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Request Details */}
+                <div className="border-2 rounded-lg overflow-hidden">
+                  <div className="bg-muted/50 px-4 py-2 border-b-2">
+                    <h4 className="font-semibold text-sm">Request Details</h4>
+                  </div>
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Customer</p>
+                        <p className="font-medium">{selectedItem.customerName || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Amount</p>
+                        <p className="font-mono font-semibold text-lg">
+                          {selectedItem.currency} {Number(selectedItem.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Submitted</p>
+                        <p className="font-medium">
+                          {format(new Date(selectedItem.submittedAt), "dd MMM yyyy")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(selectedItem.submittedAt), "HH:mm")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Priority</p>
+                        {getPriorityBadge(selectedItem.priority)}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              {/* Action hint for sent back items */}
-              {selectedItem.status === "sent_back" && (
-                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg">
-                  <p className="text-sm text-orange-700 dark:text-orange-400">
-                    <AlertCircle className="w-4 h-4 inline mr-2" />
-                    This request has been sent back for revision. Please review the checker's feedback and resubmit.
-                  </p>
-                </div>
-              )}
-            </div>
+                {/* Maker Comments */}
+                {selectedItem.makerComments && (
+                  <div className="border-2 rounded-lg overflow-hidden">
+                    <div className="bg-muted/50 px-4 py-2 border-b-2">
+                      <h4 className="font-semibold text-sm">Your Comments</h4>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm">{selectedItem.makerComments}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                {selectedItem.description && (
+                  <div className="border-2 rounded-lg overflow-hidden">
+                    <div className="bg-muted/50 px-4 py-2 border-b-2">
+                      <h4 className="font-semibold text-sm">Description</h4>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm text-muted-foreground">{selectedItem.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pending Status Info */}
+                {selectedItem.status === "pending" && (
+                  <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-700">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                          Awaiting Checker Review
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Your request is in the queue and will be reviewed soon
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
