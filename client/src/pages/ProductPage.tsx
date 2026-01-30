@@ -332,7 +332,7 @@ export default function ProductPage({ productCode }: ProductPageProps) {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onDuplicate={handleDuplicate}
-            onCreate={handleCreate}
+            onCreate={productCode !== "INWCP" ? handleCreate : undefined}
           />
         </TabsContent>
         <TabsContent value="completed">
@@ -355,7 +355,7 @@ export default function ProductPage({ productCode }: ProductPageProps) {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onDuplicate={handleDuplicate}
-            onCreate={handleCreate}
+            onCreate={productCode !== "INWCP" ? handleCreate : undefined}
           />
         </TabsContent>
       </Tabs>
